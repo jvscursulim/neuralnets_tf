@@ -39,7 +39,7 @@ class CNN(keras.Model):
             filters (list): A list with the number of
             filters in the convolutional layers.
             kernel_size (int): Kernel size.
-            strides (tuple): 
+            strides (tuple):
             padding (str): _description_
             activation (str): _description_
             use_bias (bool): _description_
@@ -128,7 +128,7 @@ class CNN(keras.Model):
                     use_bias=use_bias,
                 )(x)
             if maxpooling:
-                x = keras.layers.MaxPooling2D(x)
+                x = keras.layers.MaxPooling2D()(x)
             if batch_normalization:
                 x = keras.layers.BatchNormalization()(x)
 
@@ -191,6 +191,25 @@ class CNN(keras.Model):
 
         grads = tape.gradient(loss, self.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
+        self.loss_tracker.update_state(loss)
+
+        return {"loss": self.loss_tracker.result()}
+
+    def test_step(self, data) -> dict:
+        """_summary_
+
+        Args:
+            data (_type_): _description_
+
+        Returns:
+            dict: _description_
+        """
+
+        y_pred = self.cnn_net(data[0])
+        if self.loss_func == "binary_crossentropy":
+            loss = keras.losses.binary_crossentropy(y_true=data[1], y_pred=y_pred)
+        elif self.loss_func == "categorical_crossentropy":
+            loss = keras.losses.categorical_crossentropy(y_true=data[1], y_pred=y_pred)
         self.loss_tracker.update_state(loss)
 
         return {"loss": self.loss_tracker.result()}
