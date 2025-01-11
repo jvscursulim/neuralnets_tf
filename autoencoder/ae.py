@@ -108,13 +108,13 @@ class Autoencoder(keras.Model):
                     use_bias=use_bias,
                 )(x)
         x = keras.layers.Conv2D(
-                    filters=input_shape[-1],
-                    kernel_size=kernel_size,
-                    strides=1,
-                    padding=padding,
-                    activation=activation,
-                    use_bias=use_bias,
-                )(x)
+            filters=input_shape[-1],
+            kernel_size=kernel_size,
+            strides=1,
+            padding=padding,
+            activation=activation,
+            use_bias=use_bias,
+        )(x)
 
         encoder = keras.Model(inputs=input_layer, outputs=x, name="encoder")
 
@@ -222,6 +222,26 @@ class Autoencoder(keras.Model):
 
         grads = tape.gradient(loss, self.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
+        self.loss_tracker.update_state(loss)
+
+        return {"loss": self.loss_tracker.result()}
+
+    def test_step(self, data) -> dict:
+        """_summary_
+
+        Args:
+            data (_type_): _description_
+
+        Returns:
+            dict: _description_
+        """
+
+        encoded = self.encoder(data if not isinstance(data, tuple) else data[0])
+        decoded = self.decoder(encoded)
+        loss = keras.losses.mean_squared_error(
+            y_true=data if not isinstance(data, tuple) else data[1], y_pred=decoded
+        )
+
         self.loss_tracker.update_state(loss)
 
         return {"loss": self.loss_tracker.result()}
